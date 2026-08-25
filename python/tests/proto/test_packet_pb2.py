@@ -9,40 +9,36 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    31,
-    1,
-    '',
-    'test_packet.proto'
+    _runtime_version.Domain.PUBLIC, 6, 31, 1, "", "test_packet.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11test_packet.proto\x12\x0btest_packet\"e\n\nHostPacket\x12!\n\x04ping\x18\x01 \x01(\x0b\x32\x11.test_packet.PingH\x00\x12*\n\tset_value\x18\x02 \x01(\x0b\x32\x15.test_packet.SetValueH\x00\x42\x08\n\x06packet\"\x06\n\x04Ping\"\x19\n\x08SetValue\x12\r\n\x05value\x18\x01 \x01(\r\"\xac\x01\n\x0c\x44\x65vicePacket\x12\r\n\x05\x65rror\x18\x01 \x01(\t\x12!\n\x04pong\x18\x02 \x01(\x0b\x32\x11.test_packet.PongH\x00\x12\x30\n\x0cvalue_status\x18\x03 \x01(\x0b\x32\x18.test_packet.ValueStatusH\x00\x12-\n\x07reading\x18\x04 \x01(\x0b\x32\x1a.test_packet.DeviceReadingH\x00\x42\t\n\x07payload\"\x06\n\x04Pong\"$\n\x0bValueStatus\x12\x15\n\rcurrent_value\x18\x01 \x01(\r\"\x1e\n\rDeviceReading\x12\r\n\x05value\x18\x01 \x01(\rb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x11test_packet.proto\x12\x0btest_packet"e\n\nHostPacket\x12!\n\x04ping\x18\x01 \x01(\x0b\x32\x11.test_packet.PingH\x00\x12*\n\tset_value\x18\x02 \x01(\x0b\x32\x15.test_packet.SetValueH\x00\x42\x08\n\x06packet"\x06\n\x04Ping"\x19\n\x08SetValue\x12\r\n\x05value\x18\x01 \x01(\r"\xac\x01\n\x0c\x44\x65vicePacket\x12\r\n\x05\x65rror\x18\x01 \x01(\t\x12!\n\x04pong\x18\x02 \x01(\x0b\x32\x11.test_packet.PongH\x00\x12\x30\n\x0cvalue_status\x18\x03 \x01(\x0b\x32\x18.test_packet.ValueStatusH\x00\x12-\n\x07reading\x18\x04 \x01(\x0b\x32\x1a.test_packet.DeviceReadingH\x00\x42\t\n\x07payload"\x06\n\x04Pong"$\n\x0bValueStatus\x12\x15\n\rcurrent_value\x18\x01 \x01(\r"\x1e\n\rDeviceReading\x12\r\n\x05value\x18\x01 \x01(\rb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'test_packet_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "test_packet_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_HOSTPACKET']._serialized_start=34
-  _globals['_HOSTPACKET']._serialized_end=135
-  _globals['_PING']._serialized_start=137
-  _globals['_PING']._serialized_end=143
-  _globals['_SETVALUE']._serialized_start=145
-  _globals['_SETVALUE']._serialized_end=170
-  _globals['_DEVICEPACKET']._serialized_start=173
-  _globals['_DEVICEPACKET']._serialized_end=345
-  _globals['_PONG']._serialized_start=347
-  _globals['_PONG']._serialized_end=353
-  _globals['_VALUESTATUS']._serialized_start=355
-  _globals['_VALUESTATUS']._serialized_end=391
-  _globals['_DEVICEREADING']._serialized_start=393
-  _globals['_DEVICEREADING']._serialized_end=423
+    DESCRIPTOR._loaded_options = None
+    _globals["_HOSTPACKET"]._serialized_start = 34
+    _globals["_HOSTPACKET"]._serialized_end = 135
+    _globals["_PING"]._serialized_start = 137
+    _globals["_PING"]._serialized_end = 143
+    _globals["_SETVALUE"]._serialized_start = 145
+    _globals["_SETVALUE"]._serialized_end = 170
+    _globals["_DEVICEPACKET"]._serialized_start = 173
+    _globals["_DEVICEPACKET"]._serialized_end = 345
+    _globals["_PONG"]._serialized_start = 347
+    _globals["_PONG"]._serialized_end = 353
+    _globals["_VALUESTATUS"]._serialized_start = 355
+    _globals["_VALUESTATUS"]._serialized_end = 391
+    _globals["_DEVICEREADING"]._serialized_start = 393
+    _globals["_DEVICEREADING"]._serialized_end = 423
 # @@protoc_insertion_point(module_scope)

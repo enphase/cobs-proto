@@ -18,7 +18,6 @@ pub const CRC_XMODEM: crc::Crc<u16> = crc::Crc::<u16>::new(&crc::CRC_16_XMODEM);
 
 const RX_BUF_SIZE: usize = 16;
 
-
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EncodeError<E> {
@@ -47,14 +46,8 @@ impl<T: MessageEncode, const MAX_WIRE_SIZE: usize> PacketEncoder<T, MAX_WIRE_SIZ
     ///
     /// # Errors
     /// - `EncodeError::ProtoEncode` if proto encoding fails
-    pub fn encode(
-        packet: &T,
-        buffer: &mut [u8],
-    ) -> Result<usize, EncodeError<()>> {
-        assert!(
-            buffer.len() >= MAX_WIRE_SIZE,
-            "buffer too small"
-        );
+    pub fn encode(packet: &T, buffer: &mut [u8]) -> Result<usize, EncodeError<()>> {
+        assert!(buffer.len() >= MAX_WIRE_SIZE, "buffer too small");
 
         // Encode proto into temporary stack buffer.
         let mut proto_buf = [0u8; MAX_WIRE_SIZE];
@@ -66,7 +59,7 @@ impl<T: MessageEncode, const MAX_WIRE_SIZE: usize> PacketEncoder<T, MAX_WIRE_SIZ
 
         // Compute CRC16 of proto bytes
         let crc = CRC_XMODEM.checksum(&proto_buf[..proto_size]);
-        
+
         // Append CRC16 in big-endian format after proto bytes (in-place)
         proto_buf[proto_size] = (crc >> 8) as u8;
         proto_buf[proto_size + 1] = (crc & 0xFF) as u8;
@@ -86,13 +79,17 @@ pub struct PacketDecoder<T: MessageDecode + MessageEncode + Default, const MAX_W
     _phantom: core::marker::PhantomData<T>,
 }
 
-impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> Default for PacketDecoder<T, MAX_WIRE_SIZE> {
+impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> Default
+    for PacketDecoder<T, MAX_WIRE_SIZE>
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> PacketDecoder<T, MAX_WIRE_SIZE> {
+impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize>
+    PacketDecoder<T, MAX_WIRE_SIZE>
+{
     pub fn new() -> Self {
         Self {
             cobs_decoder: cobs::CobsDecoderHeapless::new(),
@@ -117,21 +114,23 @@ impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> Pac
     /// - `DecodeError::CobsDecoding` if COBS frame is invalid
     /// - `DecodeError::CrcMismatch` if CRC16 validation fails
     /// - `DecodeError::ProtoDecoding` if proto is invalid
-    pub async fn read_packet<R: Read>(
-        &mut self,
-        reader: &mut R,
-    ) -> Result<T, DecodeError<()>> {
+    pub async fn read_packet<R: Read>(&mut self, reader: &mut R) -> Result<T, DecodeError<()>> {
         loop {
             // Read new data if buffer is empty
             if self.rx_start >= self.rx_end {
-                let n = reader.read(&mut self.rx_buf).await.map_err(|_| DecodeError::Io)?;
+                let n = reader
+                    .read(&mut self.rx_buf)
+                    .await
+                    .map_err(|_| DecodeError::Io)?;
                 self.rx_start = 0;
                 self.rx_end = n;
             }
-            
+
             // Process bytes in buffer
-            let decode_result = self.cobs_decoder.push(&self.rx_buf[self.rx_start..self.rx_end]);
-            
+            let decode_result = self
+                .cobs_decoder
+                .push(&self.rx_buf[self.rx_start..self.rx_end]);
+
             match decode_result {
                 Ok(None) => {
                     // Consumed all bytes, need more data
@@ -141,32 +140,31 @@ impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> Pac
                     self.rx_start += decoded.parsed_size();
 
                     let decoded_data = &self.cobs_decoder.dest()[..decoded.frame_size()];
-                    
+
                     // Frame must have at least 2 bytes for CRC16
                     if decoded_data.len() < 2 {
                         self.cobs_decoder.reset();
                         return Err(DecodeError::CrcMismatch);
                     }
-                    
+
                     // Extract CRC16 (last 2 bytes, big-endian)
                     let proto_len = decoded_data.len() - 2;
-                    let received_crc = u16::from_be_bytes([
-                        decoded_data[proto_len],
-                        decoded_data[proto_len + 1],
-                    ]);
-                    
+                    let received_crc =
+                        u16::from_be_bytes([decoded_data[proto_len], decoded_data[proto_len + 1]]);
+
                     // Compute CRC16 of proto bytes
                     let computed_crc = CRC_XMODEM.checksum(&decoded_data[..proto_len]);
-                    
+
                     // Validate CRC
                     if received_crc != computed_crc {
                         self.cobs_decoder.reset();
                         return Err(DecodeError::CrcMismatch);
                     }
-                    
+
                     // Decode proto
                     let mut packet = T::default();
-                    packet.decode_from_bytes(&decoded_data[..proto_len])
+                    packet
+                        .decode_from_bytes(&decoded_data[..proto_len])
                         .map_err(|_| DecodeError::ProtoDecoding(()))?;
                     return Ok(packet);
                 }
@@ -189,25 +187,13 @@ mod tests {
 
     // --- Type aliases ---
 
-    type TestEncoder = PacketEncoder<
-        DevicePacket,
-        { max_wire_size::<DevicePacket>() },
-    >;
+    type TestEncoder = PacketEncoder<DevicePacket, { max_wire_size::<DevicePacket>() }>;
 
-    type TestDecoder = PacketDecoder<
-        DevicePacket,
-        { max_wire_size::<DevicePacket>() },
-    >;
+    type TestDecoder = PacketDecoder<DevicePacket, { max_wire_size::<DevicePacket>() }>;
 
-    type HostEncoder = PacketEncoder<
-        HostPacket,
-        { max_wire_size::<HostPacket>() },
-    >;
+    type HostEncoder = PacketEncoder<HostPacket, { max_wire_size::<HostPacket>() }>;
 
-    type HostDecoder = PacketDecoder<
-        HostPacket,
-        { max_wire_size::<HostPacket>() },
-    >;
+    type HostDecoder = PacketDecoder<HostPacket, { max_wire_size::<HostPacket>() }>;
 
     // --- Mock reader ---
 
@@ -223,7 +209,10 @@ mod tests {
 
     impl<'a, const N: usize> MockReader<'a, N> {
         fn new(responses: [&'a [u8]; N]) -> Self {
-            Self { responses, index: 0 }
+            Self {
+                responses,
+                index: 0,
+            }
         }
     }
 
@@ -246,9 +235,9 @@ mod tests {
     // DevicePacket { value_status: ValueStatus { current_value: 42 } }
     const GOLDEN_DEVICE_PACKET: DevicePacket = DevicePacket {
         error: heapless::String::new(),
-        payload: Some(DevicePacket_::Payload::ValueStatus(
-            ValueStatus { current_value: 42 },
-        )),
+        payload: Some(DevicePacket_::Payload::ValueStatus(ValueStatus {
+            current_value: 42,
+        })),
     };
     const GOLDEN_DEVICE_FRAME: &[u8] = &[0x00, 0x07, 0x1a, 0x02, 0x08, 0x2a, 0x11, 0xed, 0x00];
 
@@ -314,9 +303,15 @@ mod tests {
         assert!(frame.len() == 9);
         let mut decoder = TestDecoder::new();
         let mut reader = MockReader::new([
-            &frame[0..1], &frame[1..2], &frame[2..3],
-            &frame[3..4], &frame[4..5], &frame[5..6],
-            &frame[6..7], &frame[7..8], &frame[8..9],
+            &frame[0..1],
+            &frame[1..2],
+            &frame[2..3],
+            &frame[3..4],
+            &frame[4..5],
+            &frame[5..6],
+            &frame[6..7],
+            &frame[7..8],
+            &frame[8..9],
         ]);
         let packet = block_on(decoder.read_packet(&mut reader)).unwrap();
         assert_eq!(packet, GOLDEN_DEVICE_PACKET);

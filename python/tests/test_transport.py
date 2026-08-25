@@ -49,11 +49,11 @@ class _ExampleStreamingProtocol(
 # --- Cross-language golden vectors (must match Rust tests) ---
 
 # DevicePacket { value_status: ValueStatus { current_value: 42 } }
-GOLDEN_DEVICE_FRAME = bytes([0x00, 0x07, 0x1a, 0x02, 0x08, 0x2a, 0x11, 0xed, 0x00])
+GOLDEN_DEVICE_FRAME = bytes([0x00, 0x07, 0x1A, 0x02, 0x08, 0x2A, 0x11, 0xED, 0x00])
 GOLDEN_DEVICE_PACKET = pb.DevicePacket(value_status=pb.ValueStatus(current_value=42))
 
 # HostPacket { ping: Ping {} }
-GOLDEN_HOST_FRAME = bytes([0x00, 0x02, 0x0a, 0x03, 0xef, 0xcb, 0x00])
+GOLDEN_HOST_FRAME = bytes([0x00, 0x02, 0x0A, 0x03, 0xEF, 0xCB, 0x00])
 
 
 # --- Wire encoding tests ---

@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+    - name: Rust subdir
+      run: cd rust
     - name: Formatting
       run: cargo fmt --check
     - name: Build

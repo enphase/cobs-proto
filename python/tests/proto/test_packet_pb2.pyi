@@ -11,7 +11,11 @@ class HostPacket(_message.Message):
     SET_VALUE_FIELD_NUMBER: _ClassVar[int]
     ping: Ping
     set_value: SetValue
-    def __init__(self, ping: _Optional[_Union[Ping, _Mapping]] = ..., set_value: _Optional[_Union[SetValue, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        ping: _Optional[_Union[Ping, _Mapping]] = ...,
+        set_value: _Optional[_Union[SetValue, _Mapping]] = ...,
+    ) -> None: ...
 
 class Ping(_message.Message):
     __slots__ = ()
@@ -33,7 +37,13 @@ class DevicePacket(_message.Message):
     pong: Pong
     value_status: ValueStatus
     reading: DeviceReading
-    def __init__(self, error: _Optional[str] = ..., pong: _Optional[_Union[Pong, _Mapping]] = ..., value_status: _Optional[_Union[ValueStatus, _Mapping]] = ..., reading: _Optional[_Union[DeviceReading, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        error: _Optional[str] = ...,
+        pong: _Optional[_Union[Pong, _Mapping]] = ...,
+        value_status: _Optional[_Union[ValueStatus, _Mapping]] = ...,
+        reading: _Optional[_Union[DeviceReading, _Mapping]] = ...,
+    ) -> None: ...
 
 class Pong(_message.Message):
     __slots__ = ()
