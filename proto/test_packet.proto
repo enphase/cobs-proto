@@ -1,0 +1,41 @@
+// Minimal test / example proto for cobs-proto.
+//
+// Request has a oneof with two command types. Response is symmetric
+// with an additional error field.
+syntax = "proto3";
+
+package test_packet;
+
+// Host -> Device
+message HostPacket {
+  oneof packet {
+    Ping ping = 1;
+    SetValue set_value = 2;
+  }
+}
+
+message Ping {}
+
+message SetValue {
+  uint32 value = 1;
+}
+
+// Device -> Host
+message DevicePacket {
+  string error = 1;  // empty on success
+  oneof payload {
+    Pong pong = 2;
+    ValueStatus value_status = 3;
+    DeviceReading reading = 4;  // used by streaming test only
+  }
+}
+
+message Pong {}
+
+message ValueStatus {
+  uint32 current_value = 1;
+}
+
+message DeviceReading {
+  uint32 value = 1;
+}
