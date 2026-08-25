@@ -1,0 +1,17 @@
+[
+  {
+    "include": [
+      "**/*.rs"
+    ],
+    "license": "./.github/license-check/apache-enphase-rs.txt"
+  },
+  {
+    "include": [
+      "**/*.py"
+    ],
+    "exclude": [
+      "python/tests/proto/*.py"
+    ],
+    "license": "./.github/license-check/apache-enphase-py.txt"
+  }
+]

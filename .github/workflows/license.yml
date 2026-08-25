@@ -1,0 +1,24 @@
+name: License
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Check license headers
+      uses: viperproject/check-license-header@v2
+      with:
+        path: .
+        config: .github/license-check/config.json
+        strict: false
