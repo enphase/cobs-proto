@@ -1,6 +1,9 @@
+[workspace]
+members = [".", "test-proto"]
+
 [package]
 edition = "2024"
-name = "packet-codec"
+name = "cobs-proto"
 version = "0.1.0"
 publish = false
 
@@ -15,3 +18,8 @@ embedded-io-async = { version = "0.7.0" }
 
 # run-only dependencies
 defmt = { version = "1.0.1", optional = true }
+
+[dev-dependencies]
+embassy-futures = "0.1"
+heapless = "0.9"
+test-proto = { path = "test-proto" }

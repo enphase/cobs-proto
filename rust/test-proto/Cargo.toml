@@ -1,0 +1,12 @@
+[package]
+edition = "2024"
+name = "test-proto"
+version = "0.1.0"
+publish = false
+
+[dependencies]
+micropb = { version = "0.6.0", default-features = false, features = ["encode", "decode", "container-heapless-0-9"] }
+heapless = { version = "0.9", default-features = false }
+
+[build-dependencies]
+micropb-gen = "0.6.0"
