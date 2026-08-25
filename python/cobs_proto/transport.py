@@ -307,16 +307,16 @@ class CobsProtoStreamingProtocol(
         TDeviceReading,
     ],
 ):
-    """Extension of ``CobsProtoProtocol`` for devices that also send unsolicited
-    readings alongside request/response traffic.
+    """Extension of ``CobsProtoProtocol`` for devices that also send streaming
+    (unrequested, asynchronous) readings alongside request/response traffic.
 
     Provides a reading queue with ``next_reading`` and ``iter_readings``.
     Subclasses override ``_dispatch_device_packet`` to route incoming packets,
     calling ``super()._dispatch_device_packet(packet)`` for responses and
-    ``_enqueue_reading(reading)`` for unsolicited readings.
+    ``_enqueue_reading(reading)`` for streaming readings.
 
     Additional type parameter:
-        TDeviceReading: The protobuf message type for unsolicited readings.
+        TDeviceReading: The protobuf message type for streaming readings.
     """
 
     def __init__(self) -> None:
@@ -324,14 +324,14 @@ class CobsProtoStreamingProtocol(
         self._reading_queue: asyncio.Queue[TDeviceReading] = asyncio.Queue()
 
     def _enqueue_reading(self, reading: TDeviceReading) -> None:
-        """Add an unsolicited reading to the queue."""
+        """Add an streaming reading to the queue."""
         self._reading_queue.put_nowait(reading)
 
     async def next_reading(self) -> TDeviceReading:
-        """Return the next unsolicited reading, blocking if none is available."""
+        """Return the next streaming reading, blocking if none is available."""
         return await self._reading_queue.get()
 
     async def iter_readings(self) -> AsyncIterator[TDeviceReading]:
-        """Yield unsolicited readings as they arrive."""
+        """Yield streaming readings as they arrive."""
         while True:
             yield await self._reading_queue.get()
