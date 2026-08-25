@@ -13,11 +13,12 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
 
     steps:
     - uses: actions/checkout@v6
-    - name: Rust subdir
-      run: cd rust
     - name: Formatting
       run: cargo fmt --check
     - name: Build

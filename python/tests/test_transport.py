@@ -23,7 +23,6 @@ from cobs_proto import CobsProtoProtocol, CobsProtoStreamingProtocol
 from cobs_proto import encode_device_frame, make_connected_protocol, respond
 from .proto import test_packet_pb2 as pb
 
-
 # --- Concrete test protocol subclasses ---
 
 
