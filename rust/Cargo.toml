@@ -5,7 +5,9 @@ members = [".", "test-proto"]
 edition = "2024"
 name = "cobs-proto"
 version = "0.1.0"
-publish = false
+description = "Shared COBS+CRC framed protobuf transport for serial"
+license = "Apache-2.0"
+repository = "https://github.com/enphase/cobs-proto"
 
 [features]
 defmt = ["dep:defmt"]

@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "cobs-proto"
 description = "Shared COBS+CRC framed protobuf transport for asyncio serial protocols"
 version = "0.1.0"
+authors = [
+    { name = "Richard Lin", email = "richardlin@enphaseenergy.com" }
+]
 requires-python = "~=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -15,6 +18,11 @@ dependencies = [
     "protobuf~=7.0",
     "cobs",
 ]
+
+[project.urls]
+Homepage = "https://github.com/enphase/cobs-proto"
+Issues = "https://github.com/enphase/cobs-proto/issues"
+
 
 [project.optional-dependencies]
 dev = [
