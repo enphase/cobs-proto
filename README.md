@@ -25,7 +25,6 @@ let mut frame_buf = [0u8; MyEncoder::MAX_FRAME_SIZE];
 match MyEncoder::encode(&packet, &mut frame_buf) {
     Ok(len) => {
         // send frame_buf[..len] over USB
-    }
     Err(e) => error!("proto encode error: {}", e),
 }
 ```
