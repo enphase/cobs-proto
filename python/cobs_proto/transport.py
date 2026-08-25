@@ -64,7 +64,7 @@ class CobsProtoProtocol(
 
     @staticmethod
     @abc.abstractmethod
-    def _device_packet_type() -> Type[TWireDevicePacket]:  # type: ignore[misc]
+    def _device_packet_type() -> Type[TWireDevicePacket]:
         """Return the protobuf class used to deserialize incoming device packets."""
         ...
 
@@ -154,7 +154,7 @@ class CobsProtoProtocol(
                     raise ValueError(
                         f"CRC mismatch: received {received_crc:04x}, computed {computed_crc:04x}"
                     )
-                packet = self._device_packet_type().FromString(message_bytes)  # type: ignore[misc]
+                packet = self._device_packet_type().FromString(message_bytes)
             except Exception as e:
                 logging.warning(
                     f"discarding bad packet: {len(serial_bytes)} bytes, {serial_bytes!r} - {e}"

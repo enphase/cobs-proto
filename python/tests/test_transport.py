@@ -15,6 +15,7 @@
 """Tests for cobs_proto transport using the shared test_packet proto."""
 
 import asyncio
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -30,7 +31,7 @@ class _ExampleProtocol(
     CobsProtoProtocol[pb.HostPacket, pb.DevicePacket],
 ):
     @staticmethod
-    def _device_packet_type():
+    def _device_packet_type() -> type[pb.DevicePacket]:
         return pb.DevicePacket
 
 
@@ -38,10 +39,10 @@ class _ExampleStreamingProtocol(
     CobsProtoStreamingProtocol[pb.HostPacket, pb.DevicePacket],
 ):
     @staticmethod
-    def _device_packet_type():
+    def _device_packet_type() -> type[pb.DevicePacket]:
         return pb.DevicePacket
 
-    def _is_streaming_packet(self, packet):
+    def _is_streaming_packet(self, packet: pb.DevicePacket) -> bool:
         return packet.HasField("reading")
 
 
@@ -59,11 +60,11 @@ GOLDEN_HOST_FRAME = bytes([0x00, 0x02, 0x0A, 0x03, 0xEF, 0xCB, 0x00])
 
 
 class TestWireEncoding:
-    def test_encode_device_frame_matches_golden(self):
+    def test_encode_device_frame_matches_golden(self) -> None:
         """encode_device_frame produces bytes matching the Rust encoder."""
         assert encode_device_frame(GOLDEN_DEVICE_PACKET) == GOLDEN_DEVICE_FRAME
 
-    def test_encode_host_frame_matches_golden(self):
+    def test_encode_host_frame_matches_golden(self) -> None:
         """_write_message produces bytes matching the Rust encoder."""
         protocol, transport = make_connected_protocol(_ExampleProtocol())
         protocol._write_message(pb.HostPacket(ping=pb.Ping()))
@@ -75,7 +76,7 @@ class TestWireEncoding:
 
 
 class TestWireDecoding:
-    def test_decode_golden_frame(self):
+    def test_decode_golden_frame(self) -> None:
         """data_received correctly decodes the golden device frame."""
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         fut = asyncio.get_event_loop().create_future()
@@ -84,7 +85,7 @@ class TestWireDecoding:
         assert fut.done()
         assert fut.result() == GOLDEN_DEVICE_PACKET
 
-    def test_crc_mismatch_discards_packet(self):
+    def test_crc_mismatch_discards_packet(self) -> None:
         """A corrupted frame is silently discarded."""
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         fut = asyncio.get_event_loop().create_future()
@@ -94,7 +95,7 @@ class TestWireDecoding:
         protocol.data_received(bytes(corrupted))
         assert not fut.done()
 
-    def test_partial_frame_delivery(self):
+    def test_partial_frame_delivery(self) -> None:
         """A frame split across two data_received calls still decodes."""
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         fut = asyncio.get_event_loop().create_future()
@@ -112,7 +113,7 @@ class TestWireDecoding:
 
 class TestRequestResponse:
     @pytest.mark.asyncio
-    async def test_send_request_and_respond(self):
+    async def test_send_request_and_respond(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleProtocol())
 
         result, _ = await asyncio.gather(
@@ -122,7 +123,7 @@ class TestRequestResponse:
         assert result == GOLDEN_DEVICE_PACKET
 
     @pytest.mark.asyncio
-    async def test_timeout_on_no_response(self):
+    async def test_timeout_on_no_response(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         protocol.REQUEST_TIMEOUT = 0.01
         with pytest.raises(asyncio.TimeoutError):
@@ -130,7 +131,7 @@ class TestRequestResponse:
         assert protocol._pending_response is None
 
     @pytest.mark.asyncio
-    async def test_one_in_flight_enforcement(self):
+    async def test_one_in_flight_enforcement(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         asyncio.ensure_future(protocol.send_request(pb.HostPacket(ping=pb.Ping())))
         await asyncio.sleep(0)
@@ -138,7 +139,7 @@ class TestRequestResponse:
             await protocol.send_request(pb.HostPacket(ping=pb.Ping()))
 
     @pytest.mark.asyncio
-    async def test_unrequested_packet_discarded(self):
+    async def test_unrequested_packet_discarded(self) -> None:
         """A packet with no pending request is discarded (not raised)."""
         protocol, _ = make_connected_protocol(_ExampleProtocol())
         protocol.data_received(encode_device_frame(GOLDEN_DEVICE_PACKET))
@@ -149,7 +150,7 @@ class TestRequestResponse:
 
 class TestStreaming:
     @pytest.mark.asyncio
-    async def test_streaming_packet_goes_to_queue(self):
+    async def test_streaming_packet_goes_to_queue(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
         reading = pb.DeviceReading(value=42)
         protocol.data_received(encode_device_frame(pb.DevicePacket(reading=reading)))
@@ -158,7 +159,7 @@ class TestStreaming:
         assert pkt.reading == reading
 
     @pytest.mark.asyncio
-    async def test_response_packet_resolves_future(self):
+    async def test_response_packet_resolves_future(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
 
         result, _ = await asyncio.gather(
@@ -168,11 +169,11 @@ class TestStreaming:
         assert result == GOLDEN_DEVICE_PACKET
 
     @pytest.mark.asyncio
-    async def test_interleaved_streaming_and_response(self):
+    async def test_interleaved_streaming_and_response(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
         reading = pb.DeviceReading(value=7)
 
-        async def simulate():
+        async def simulate() -> None:
             await respond(protocol, pb.DevicePacket(reading=reading))
             await respond(protocol, GOLDEN_DEVICE_PACKET)
 
@@ -186,7 +187,7 @@ class TestStreaming:
         assert pkt.reading == reading
 
     @pytest.mark.asyncio
-    async def test_iter_readings(self):
+    async def test_iter_readings(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
         readings = [pb.DeviceReading(value=i) for i in range(3)]
         for r in readings:

@@ -9,14 +9,15 @@ version = "0.1.0"
 authors = [
     { name = "Richard Lin", email = "richardlin@enphaseenergy.com" }
 ]
-requires-python = "~=3.8"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+license = "Apache-2.0"
 dependencies = [
-    "protobuf~=7.0",
-    "cobs",
+    "protobuf>=7.0",
+    "cobs>=1.0",
 ]
 
 [project.urls]
@@ -30,3 +31,17 @@ dev = [
     "pytest~=9.0",
     "pytest-asyncio~=1.0",
 ]
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["cobs.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.proto.*"]
+ignore_errors = true

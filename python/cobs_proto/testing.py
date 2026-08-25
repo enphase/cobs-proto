@@ -17,7 +17,7 @@
 import asyncio
 import binascii
 import struct
-from typing import TypeVar
+from typing import cast, TypeVar
 from unittest.mock import MagicMock
 
 import cobs.cobs
@@ -43,7 +43,7 @@ def encode_device_frame(packet: pb_message.Message) -> bytes:
     message_bytes = packet.SerializeToString()
     crc = binascii.crc_hqx(message_bytes, 0)
     message_with_crc = message_bytes + struct.pack(">H", crc)
-    return b"\x00" + cobs.cobs.encode(message_with_crc) + b"\x00"
+    return cast(bytes, b"\x00" + cobs.cobs.encode(message_with_crc) + b"\x00")
 
 
 async def respond(
