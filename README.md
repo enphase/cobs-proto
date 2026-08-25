@@ -33,14 +33,10 @@ See [`proto/test_packet.proto`](proto/test_packet.proto) for a minimal example s
 ### Encoding
 
 ```rust
-use cobs_proto::{PacketEncoder, micropb, cobs};
+use cobs_proto::{PacketEncoder, max_wire_size};
 use test_proto::proto::test_packet_::*;
 
-type DeviceEncoder = PacketEncoder<
-    DevicePacket,
-    { micropb::size::max_encoded_size::<DevicePacket>() },
-    { cobs::max_encoding_length(micropb::size::max_encoded_size::<DevicePacket>()) },
->;
+type DeviceEncoder = PacketEncoder<DevicePacket, { max_wire_size::<DevicePacket>() }>;
 
 let packet = DevicePacket {
     error: Default::default(),
@@ -49,7 +45,7 @@ let packet = DevicePacket {
     )),
 };
 
-let mut buf = [0u8; DeviceEncoder::MAX_FRAME_SIZE];
+let mut buf = [0u8; max_wire_size::<DevicePacket>()];
 let len = DeviceEncoder::encode(&packet, &mut buf).unwrap();
 assert_eq!(&buf[..len], &[0x00, 0x07, 0x1a, 0x02, 0x08, 0x2a, 0x11, 0xed, 0x00]);
 ```
@@ -57,13 +53,10 @@ assert_eq!(&buf[..len], &[0x00, 0x07, 0x1a, 0x02, 0x08, 0x2a, 0x11, 0xed, 0x00])
 ### Decoding
 
 ```rust
-use cobs_proto::{PacketDecoder, micropb, cobs};
+use cobs_proto::{PacketDecoder, max_wire_size};
 use test_proto::proto::test_packet_::*;
 
-type HostDecoder = PacketDecoder<
-    HostPacket,
-    { cobs::max_encoding_length(micropb::size::max_encoded_size::<HostPacket>()) },
->;
+type HostDecoder = PacketDecoder<HostPacket, { max_wire_size::<HostPacket>() }>;
 
 let mut decoder = HostDecoder::new();
 // In real code, pass an `embedded_io_async::Read` impl (e.g. USB/UART):

@@ -4,9 +4,13 @@
 use embedded_io_async::Read;
 use micropb::{MessageDecode, MessageEncode, PbEncoder};
 
-// Re-export for use in const generic expressions
-pub use cobs;
-pub use micropb;
+/// Maximum wire frame size (bytes) for message type `T`, including sentinels, COBS overhead, CRC16,
+/// and proto payload. This is the single const generic needed for both `PacketEncoder` and `PacketDecoder`.
+pub const fn max_wire_size<T: MessageEncode>() -> usize {
+    // proto + 2-byte CRC, then COBS-encoded, plus 2 sentinel bytes
+    let proto_and_crc = micropb::size::max_encoded_size::<T>() + 2;
+    cobs::max_encoding_length(proto_and_crc) + 2
+}
 
 // CRC-16/XMODEM for frame integrity (poly 0x1021, init 0x0000, no reflection)
 // Matches Python's binascii.crc_hqx
@@ -30,23 +34,16 @@ pub enum DecodeError<E> {
     ProtoDecoding(E),
 }
 
-// Note: PROTO_SIZE and COBS_SIZE must be provided separately because Rust's const generics don't yet support
-// using const parameters in const expressions like array sizes. https://github.com/rust-lang/rust/issues/76560
-pub struct PacketEncoder<T: MessageEncode, const PROTO_SIZE: usize, const COBS_SIZE: usize> {
-    _phantom: core::marker::PhantomData<T>,  // suppress compiler warning since T doesn't appear in struct fields
+pub struct PacketEncoder<T: MessageEncode, const MAX_WIRE_SIZE: usize> {
+    _phantom: core::marker::PhantomData<T>,
 }
 
-impl<T: MessageEncode, const PROTO_SIZE: usize, const COBS_SIZE: usize> PacketEncoder<T, PROTO_SIZE, COBS_SIZE> {
-    /// Maximum frame size for this packet type (includes COBS encoding + CRC16 + sentinel)
-    pub const MAX_FRAME_SIZE: usize = COBS_SIZE + 2 + 1;
-
+impl<T: MessageEncode, const MAX_WIRE_SIZE: usize> PacketEncoder<T, MAX_WIRE_SIZE> {
     /// Encodes a packet in-place into the provided buffer.
-    /// Returns the number of bytes written (includes trailing sentinel).
+    /// Returns the number of bytes written (includes leading and trailing sentinels).
     ///
     /// # Panics
-    /// Panics if buffer is smaller than the maximum frame size for the packet type.
-    /// This is a programming error that should be caught at compile time by using
-    /// appropriately sized buffers.
+    /// Panics if buffer is smaller than `MAX_WIRE_SIZE`.
     ///
     /// # Errors
     /// - `EncodeError::ProtoEncode` if proto encoding fails
@@ -55,12 +52,12 @@ impl<T: MessageEncode, const PROTO_SIZE: usize, const COBS_SIZE: usize> PacketEn
         buffer: &mut [u8],
     ) -> Result<usize, EncodeError<()>> {
         assert!(
-            buffer.len() >= Self::MAX_FRAME_SIZE,
+            buffer.len() >= MAX_WIRE_SIZE,
             "buffer too small"
         );
 
-        // Encode proto into temporary stack buffer sized for this packet type
-        let mut proto_buf = [0u8; PROTO_SIZE];
+        // Encode proto into temporary stack buffer.
+        let mut proto_buf = [0u8; MAX_WIRE_SIZE];
         let mut encoder = PbEncoder::new(&mut proto_buf[..]);
         packet
             .encode(&mut encoder)
@@ -74,29 +71,28 @@ impl<T: MessageEncode, const PROTO_SIZE: usize, const COBS_SIZE: usize> PacketEn
         proto_buf[proto_size] = (crc >> 8) as u8;
         proto_buf[proto_size + 1] = (crc & 0xFF) as u8;
 
-        // COBS encode proto+CRC directly into output buffer (leaving room for sentinel)
-        let buffer_len = buffer.len();
-        let cobs_size = cobs::encode_including_sentinels(&proto_buf[..proto_size + 2], &mut buffer[..buffer_len - 1]);
+        // COBS encode proto+CRC into output buffer (includes leading + trailing sentinels)
+        let cobs_size = cobs::encode_including_sentinels(&proto_buf[..proto_size + 2], buffer);
 
         Ok(cobs_size)
     }
 }
 
-pub struct PacketDecoder<T: MessageDecode + MessageEncode + Default, const COBS_SIZE: usize> {
-    cobs_decoder: cobs::CobsDecoderHeapless<COBS_SIZE>,
+pub struct PacketDecoder<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> {
+    cobs_decoder: cobs::CobsDecoderHeapless<MAX_WIRE_SIZE>,
     rx_buf: [u8; RX_BUF_SIZE],
     rx_start: usize,
     rx_end: usize,
     _phantom: core::marker::PhantomData<T>,
 }
 
-impl<T: MessageDecode + MessageEncode + Default, const COBS_SIZE: usize> Default for PacketDecoder<T, COBS_SIZE> {
+impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> Default for PacketDecoder<T, MAX_WIRE_SIZE> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: MessageDecode + MessageEncode + Default, const COBS_SIZE: usize> PacketDecoder<T, COBS_SIZE> {
+impl<T: MessageDecode + MessageEncode + Default, const MAX_WIRE_SIZE: usize> PacketDecoder<T, MAX_WIRE_SIZE> {
     pub fn new() -> Self {
         Self {
             cobs_decoder: cobs::CobsDecoderHeapless::new(),
@@ -195,24 +191,22 @@ mod tests {
 
     type TestEncoder = PacketEncoder<
         DevicePacket,
-        { micropb::size::max_encoded_size::<DevicePacket>() },
-        { cobs::max_encoding_length(micropb::size::max_encoded_size::<DevicePacket>()) },
+        { max_wire_size::<DevicePacket>() },
     >;
 
     type TestDecoder = PacketDecoder<
         DevicePacket,
-        { cobs::max_encoding_length(micropb::size::max_encoded_size::<DevicePacket>()) },
+        { max_wire_size::<DevicePacket>() },
     >;
 
     type HostEncoder = PacketEncoder<
         HostPacket,
-        { micropb::size::max_encoded_size::<HostPacket>() },
-        { cobs::max_encoding_length(micropb::size::max_encoded_size::<HostPacket>()) },
+        { max_wire_size::<HostPacket>() },
     >;
 
     type HostDecoder = PacketDecoder<
         HostPacket,
-        { cobs::max_encoding_length(micropb::size::max_encoded_size::<HostPacket>()) },
+        { max_wire_size::<HostPacket>() },
     >;
 
     // --- Mock reader ---
@@ -268,14 +262,14 @@ mod tests {
 
     #[test]
     fn encode_produces_golden_frame() {
-        let mut buf = [0u8; TestEncoder::MAX_FRAME_SIZE];
+        let mut buf = [0u8; max_wire_size::<DevicePacket>()];
         let len = TestEncoder::encode(&GOLDEN_DEVICE_PACKET, &mut buf).unwrap();
         assert_eq!(&buf[..len], GOLDEN_DEVICE_FRAME);
     }
 
     #[test]
     fn encode_host_produces_golden_frame() {
-        let mut buf = [0u8; HostEncoder::MAX_FRAME_SIZE];
+        let mut buf = [0u8; max_wire_size::<HostPacket>()];
         let len = HostEncoder::encode(&GOLDEN_HOST_PACKET, &mut buf).unwrap();
         assert_eq!(&buf[..len], GOLDEN_HOST_FRAME);
     }
