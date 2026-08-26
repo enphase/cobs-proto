@@ -33,6 +33,7 @@ dev = [
     "black~=26.0",
     "pytest~=9.0",
     "pytest-asyncio~=1.0",
+    "types-protobuf~=7.0",
 ]
 
 [tool.mypy]
