@@ -25,14 +25,18 @@ const DEVICE_PACKET: DevicePacket = DevicePacket {
         current_value: 42,
     })),
 };
-const DEVICE_FRAME: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../test_proto/device_value_status_42.bin"));
+const DEVICE_FRAME: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../test_proto/device_value_status_42.bin"
+));
 
 const HOST_PACKET: HostPacket = HostPacket {
     packet: Some(HostPacket_::Packet::Ping(Ping {})),
 };
-const HOST_FRAME: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../test_proto/host_ping.bin"));
+const HOST_FRAME: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../test_proto/host_ping.bin"
+));
 
 // --- Type aliases ---
 
