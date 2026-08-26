@@ -3,11 +3,17 @@ members = [".", "test-proto"]
 
 [package]
 edition = "2024"
+rust-version = "1.85"
 name = "cobs-proto"
 version = "0.1.0"
 description = "Shared COBS+CRC framed protobuf transport for serial"
 license = "Apache-2.0"
 repository = "https://github.com/enphase/cobs-proto"
+readme = "README.md"
+categories = ["embedded", "no-std", "encoding"]
+keywords = ["cobs", "protobuf", "serial", "framing", "embedded"]
+# tests depends on shared golden frames outside the package root
+exclude = ["/tests"]
 
 [features]
 defmt = ["dep:defmt"]

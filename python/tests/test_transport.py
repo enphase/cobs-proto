@@ -15,6 +15,7 @@
 """Tests for cobs_proto transport using the shared test_packet proto."""
 
 import asyncio
+from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock
 
@@ -46,14 +47,16 @@ class _ExampleStreamingProtocol(
         return packet.HasField("reading")
 
 
-# --- Cross-language golden vectors (must match Rust tests) ---
+# --- Cross-language golden vectors ---
+# The .bin files are raw golden wire frames shared with the Rust tests.
 
-# DevicePacket { value_status: ValueStatus { current_value: 42 } }
-GOLDEN_DEVICE_FRAME = bytes([0x00, 0x07, 0x1A, 0x02, 0x08, 0x2A, 0x11, 0xED, 0x00])
+_VECTORS_DIR = Path(__file__).resolve().parents[2] / "test_proto"
+
 GOLDEN_DEVICE_PACKET = pb.DevicePacket(value_status=pb.ValueStatus(current_value=42))
+GOLDEN_DEVICE_FRAME = (_VECTORS_DIR / "device_value_status_42.bin").read_bytes()
 
 # HostPacket { ping: Ping {} }
-GOLDEN_HOST_FRAME = bytes([0x00, 0x02, 0x0A, 0x03, 0xEF, 0xCB, 0x00])
+GOLDEN_HOST_FRAME = (_VECTORS_DIR / "host_ping.bin").read_bytes()
 
 
 # --- Wire encoding tests ---

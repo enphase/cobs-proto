@@ -20,7 +20,7 @@ fn main() {
             ".test_packet.DevicePacket.error",
             micropb_gen::Config::new().max_bytes(32),
         )
-        .add_protoc_arg("-I../../proto");
+        .add_protoc_arg("-I../../test_proto");
 
     generator
         .compile_protos(
