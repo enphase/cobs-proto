@@ -215,15 +215,15 @@ class CobsProtoStreamingProtocol(
         """Return the next streaming packet, blocking if none is available."""
         item = await self._reading_queue.get()
         if isinstance(item, Exception):
+            self._reading_queue.put_nowait(item)
             raise item
-        else:
-            return item
+        return item
 
     async def iter_readings(self) -> AsyncIterator[TWireDevicePacket]:
         """Yield streaming packets as they arrive."""
         while True:
             item = await self._reading_queue.get()
             if isinstance(item, Exception):
+                self._reading_queue.put_nowait(item)
                 raise item
-            else:
-                yield item
+            yield item

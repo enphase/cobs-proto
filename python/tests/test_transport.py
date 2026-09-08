@@ -262,3 +262,11 @@ class TestDisconnection:
         assert pkt.reading == reading
         with pytest.raises(ConnectionError):
             await asyncio.wait_for(protocol.next_reading(), timeout=0.1)
+
+    @pytest.mark.asyncio
+    async def test_repeated_reads_after_disconnect_keep_raising(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
+        protocol.connection_lost(ConnectionError("unplugged"))
+        for _ in range(3):
+            with pytest.raises(ConnectionError):
+                await asyncio.wait_for(protocol.next_reading(), timeout=0.1)
