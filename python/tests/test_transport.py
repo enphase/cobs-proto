@@ -202,3 +202,50 @@ class TestStreaming:
             if len(collected) == 3:
                 break
         assert collected == readings
+
+
+# --- Disconnection tests ---
+
+
+class TestDisconnection:
+    def test_connection_lost_closes_transport(self) -> None:
+        protocol, transport = make_connected_protocol(_ExampleProtocol())
+        protocol.connection_lost(ConnectionError("unplugged"))
+        transport.close.assert_called_once()
+        assert protocol._transport is None
+
+    @pytest.mark.asyncio
+    async def test_connection_lost_fails_pending_request(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleProtocol())
+        task = asyncio.ensure_future(protocol.send_request(pb.HostPacket(ping=pb.Ping())))
+        await asyncio.sleep(0)
+        protocol.connection_lost(ConnectionError("unplugged"))
+        with pytest.raises(ConnectionError):
+            await task
+
+    @pytest.mark.asyncio
+    async def test_connection_lost_raises_from_next_reading(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
+        protocol.connection_lost(ConnectionError("unplugged"))
+        with pytest.raises(ConnectionError):
+            await asyncio.wait_for(protocol.next_reading(), timeout=0.1)
+
+    @pytest.mark.asyncio
+    async def test_connection_lost_raises_from_iter_readings(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
+        protocol.connection_lost(ConnectionError("unplugged"))
+        with pytest.raises(ConnectionError):
+            async for _ in protocol.iter_readings():
+                pass
+
+    @pytest.mark.asyncio
+    async def test_queued_readings_drain_before_disconnect_error(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
+        reading = pb.DeviceReading(value=99)
+        protocol.data_received(encode_device_frame(pb.DevicePacket(reading=reading)))
+        protocol.connection_lost(ConnectionError("unplugged"))
+
+        pkt = await asyncio.wait_for(protocol.next_reading(), timeout=0.1)
+        assert pkt.reading == reading
+        with pytest.raises(ConnectionError):
+            await asyncio.wait_for(protocol.next_reading(), timeout=0.1)
