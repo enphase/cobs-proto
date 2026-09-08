@@ -217,7 +217,9 @@ class TestDisconnection:
     @pytest.mark.asyncio
     async def test_connection_lost_fails_pending_request(self) -> None:
         protocol, _ = make_connected_protocol(_ExampleProtocol())
-        task = asyncio.ensure_future(protocol.send_request(pb.HostPacket(ping=pb.Ping())))
+        task = asyncio.ensure_future(
+            protocol.send_request(pb.HostPacket(ping=pb.Ping()))
+        )
         await asyncio.sleep(0)
         protocol.connection_lost(ConnectionError("unplugged"))
         with pytest.raises(ConnectionError):
@@ -237,6 +239,17 @@ class TestDisconnection:
         with pytest.raises(ConnectionError):
             async for _ in protocol.iter_readings():
                 pass
+
+    @pytest.mark.asyncio
+    async def test_streaming_connection_lost_fails_pending_request(self) -> None:
+        protocol, _ = make_connected_protocol(_ExampleStreamingProtocol())
+        task = asyncio.ensure_future(
+            protocol.send_request(pb.HostPacket(ping=pb.Ping()))
+        )
+        await asyncio.sleep(0)
+        protocol.connection_lost(ConnectionError("unplugged"))
+        with pytest.raises(ConnectionError):
+            await task
 
     @pytest.mark.asyncio
     async def test_queued_readings_drain_before_disconnect_error(self) -> None:

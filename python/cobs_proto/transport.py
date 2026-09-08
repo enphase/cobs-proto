@@ -34,7 +34,8 @@ from typing import (
     Generic,
     Optional,
     Type,
-    TypeVar, Union,
+    TypeVar,
+    Union,
 )
 
 import cobs.cobs
@@ -196,7 +197,9 @@ class CobsProtoStreamingProtocol(
 
     def __init__(self) -> None:
         super().__init__()
-        self._reading_queue: asyncio.Queue[Union[TWireDevicePacket, Exception]] = asyncio.Queue()
+        self._reading_queue: asyncio.Queue[Union[TWireDevicePacket, Exception]] = (
+            asyncio.Queue()
+        )
 
     def _dispatch_device_packet(self, packet: TWireDevicePacket) -> None:
         if self._is_streaming_packet(packet):
@@ -205,6 +208,7 @@ class CobsProtoStreamingProtocol(
             super()._dispatch_device_packet(packet)
 
     def _on_connection_lost(self, exc: Exception) -> None:
+        super()._on_connection_lost(exc)
         self._reading_queue.put_nowait(exc)
 
     async def next_reading(self) -> TWireDevicePacket:
