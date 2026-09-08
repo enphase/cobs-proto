@@ -35,6 +35,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
 )
 
 import cobs.cobs
@@ -84,7 +85,15 @@ class CobsProtoProtocol(
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         logging.error(f"connection lost: {exc}")
+        if self._transport is not None:
+            self._transport.close()
         self._transport = None
+        self._on_connection_lost(exc or ConnectionError())
+
+    def _on_connection_lost(self, exc: Exception) -> None:
+        if self._pending_response is not None:
+            self._pending_response.set_exception(exc)
+            self._pending_response = None
 
     async def wait_connected(self) -> None:
         """Block until the serial connection is established."""
@@ -188,7 +197,9 @@ class CobsProtoStreamingProtocol(
 
     def __init__(self) -> None:
         super().__init__()
-        self._reading_queue: asyncio.Queue[TWireDevicePacket] = asyncio.Queue()
+        self._reading_queue: asyncio.Queue[Union[TWireDevicePacket, Exception]] = (
+            asyncio.Queue()
+        )
 
     def _dispatch_device_packet(self, packet: TWireDevicePacket) -> None:
         if self._is_streaming_packet(packet):
@@ -196,11 +207,23 @@ class CobsProtoStreamingProtocol(
         else:
             super()._dispatch_device_packet(packet)
 
+    def _on_connection_lost(self, exc: Exception) -> None:
+        super()._on_connection_lost(exc)
+        self._reading_queue.put_nowait(exc)
+
     async def next_reading(self) -> TWireDevicePacket:
         """Return the next streaming packet, blocking if none is available."""
-        return await self._reading_queue.get()
+        item = await self._reading_queue.get()
+        if isinstance(item, Exception):
+            self._reading_queue.put_nowait(item)
+            raise item
+        return item
 
     async def iter_readings(self) -> AsyncIterator[TWireDevicePacket]:
         """Yield streaming packets as they arrive."""
         while True:
-            yield await self._reading_queue.get()
+            item = await self._reading_queue.get()
+            if isinstance(item, Exception):
+                self._reading_queue.put_nowait(item)
+                raise item
+            yield item
